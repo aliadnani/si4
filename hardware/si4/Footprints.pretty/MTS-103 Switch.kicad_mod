@@ -1,0 +1,118 @@
+(footprint "MTS-103 Switch"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at 0 7.62 0)
+		(layer "F.SilkS")
+		(uuid "911cc922-eab8-4998-9d5d-c490638d3d77")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "MTS-103 Switch"
+		(at 0 -7.874 0)
+		(layer "F.Fab")
+		(uuid "e24b707b-76d8-42a0-b01d-2fbe7a2e3115")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "29344439-5d9a-4048-a7d7-5f92be193e03")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "e7437e03-ba7e-4842-bf8a-b604c4d35072")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole)
+	(fp_line
+		(start -3.39 -6.6)
+		(end -3.39 6.6)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "88f381f5-810b-46c2-b475-6893826a25a8")
+	)
+	(fp_line
+		(start -3.39 6.6)
+		(end 3.39 6.6)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "3bf1affd-a784-4027-abc4-53e057a5880d")
+	)
+	(fp_line
+		(start 3.39 -6.6)
+		(end -3.39 -6.6)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "06a69526-bf1d-4ec3-9aa1-a68483946f63")
+	)
+	(fp_line
+		(start 3.39 6.6)
+		(end 3.39 -6.6)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "0e299784-fc6d-4e6c-8adc-05b76df749b3")
+	)
+	(pad "1" thru_hole circle
+		(at 0 -4.7)
+		(size 3 3)
+		(drill oval 2.5 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "b17fd2ca-fc44-4f3c-835a-4e5893f6aa46")
+	)
+	(pad "2" thru_hole circle
+		(at 0 0)
+		(size 3 3)
+		(drill oval 2.5 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "5f3201f7-59a6-480c-b125-98072c57ca08")
+	)
+	(pad "3" thru_hole circle
+		(at 0 4.7)
+		(size 3 3)
+		(drill oval 2.5 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "64ed5dee-d6b0-4e6e-a93d-2e05793612fe")
+	)
+	(embedded_fonts no)
+)

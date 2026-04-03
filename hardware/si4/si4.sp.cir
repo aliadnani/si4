@@ -1,0 +1,61 @@
+.title KiCad schematic
+U5 __U5
+R8 +3V3 Net-_U5-_RESET_ 10k
+SW5 __SW5
+SW3 __SW3
+SW4 __SW4
+SW6 __SW6
+SW7 __SW7
+U3 __U3
+R5 Net-_U3-EN_ +3V3 10k
+C8 Net-_U3-EN_ GND 1u
+C9 +3V3 GND 1u
+C7 +3V3 GND 22u
+R6 GND Net-_J2-CC2_ 5.1k
+R4 GND Net-_J2-CC1_ 5.1k
+J2 __J2
+R10 +3V3 /SDA_I2C 4.7k
+SW1 __SW1
+R9 /SCL_I2C +3V3 4.7k
+SW2 __SW2
+J4 __J4
+J3 __J3
+J1 __J1
+U1 __U1
+L2 Net-_U2-SW_ +3V3 2.2u
+U2 __U2
+D3 Net-_D1-K_ Net-_D3-A_ LED
+D4 Net-_D3-A_ Net-_D1-K_ LED
+C10 +3V3 GND 10u
+C6 +5V_USB GND 10u
+R2 +5V_USB Net-_C11-Pad2_ 2
+C12 +5V GND 10u
+R7 Net-_U2-FB_ GND 100k
+R3 +3V3 Net-_U2-FB_ 453k
+C14 +5V GND 2.2u
+J5 __J5
+C15 +5V GND 22u
+TP2 __TP2
+U6 __U6
+TP1 __TP1
+L1 Net-_U1-SW_ Net-_BT1-+_ 1u
+C16 /STBY_MOTOR GND 10n
+C17 Net-_U6-EN/FAULT_ GND 10n
+R11 Net-_U6-EN/FAULT_ +3V3 10k
+C11 GND Net-_C11-Pad2_ 10u
+D2 Net-_D1-A_ Net-_D1-K_ LED
+D1 Net-_D1-K_ Net-_D1-A_ LED
+C13 +3V3 GND 1u
+R1 Net-_BT1-+_ Net-_C3-Pad1_ 2
+VBT1 Net-_BT1-+_ GND DC 18650 
+C3 Net-_C3-Pad1_ GND 10u
+R13 +3V3 Net-_D6-A_ 1k
+D6 GND Net-_D6-A_ LED
+C2 +5V GND 22u
+C1 +5V GND 22u
+C4 Net-_BT1-+_ GND 10u
+C5 +5V GND 22u
+R12 +5V Net-_D5-A_ 1k
+D5 GND Net-_D5-A_ LED
+U4 __U4
+.end
