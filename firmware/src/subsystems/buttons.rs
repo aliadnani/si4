@@ -1,6 +1,6 @@
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, mutex::Mutex};
 use esp_idf_svc::hal::{
-    gpio::{AnyInputPin, Input, InputPin, Pin, PinDriver},
+    gpio::{Input, PinDriver},
     i2c::I2cDriver,
     task::embassy_sync::EspRawMutex,
 };
@@ -42,13 +42,49 @@ pub struct ButtonSubsystem {
     state: CompleteButtonState,
     buttons_channel: &'static Channel<EspRawMutex, ButtonChange, 32>,
     shared_i2c_bus: &'static Mutex<EspRawMutex, I2cDriver<'static>>,
-    interrupt_pin_1: PinDriver<'static, Input>,
-    interrupt_pin_2: PinDriver<'static, Input>,
+    pub interrupt_pin_1: PinDriver<'static, Input>,
+    pub interrupt_pin_2: PinDriver<'static, Input>,
 }
 
 impl ButtonSubsystem {
+    const EXPANDER_I2C_ADDRESS: u8 = 0x20;
 
+    pub async fn new(
+        buttons_channel: &'static Channel<EspRawMutex, ButtonChange, 32>,
+        shared_i2c_bus: &'static Mutex<EspRawMutex, I2cDriver<'static>>,
+        mut interrupt_pin_1: PinDriver<'static, Input>,
+        mut interrupt_pin_2: PinDriver<'static, Input>,
+    ) -> Self {
+        // Configure the interrupt pins to trigger on any edge
+        interrupt_pin_1
+            .enable_interrupt()
+            .expect("Failed to enable GPIO interrupt 1");
+        interrupt_pin_2
+            .enable_interrupt()
+            .expect("Failed to enable GPIO interrupt 2");
 
+        // Initialize GPIO expander over I2C
+        let mut i2c_bus = shared_i2c_bus.lock().await;
+        let _ = i2c_bus.write(Self::EXPANDER_I2C_ADDRESS, &[0x00, 0xFF], 10); // Set all pins as inputs (IODIRA)
+        let _ = i2c_bus.write(Self::EXPANDER_I2C_ADDRESS, &[0x01, 0xFF], 10); // Set all pins as inputs (IODIRB)
+        drop(i2c_bus);
+
+        // Return the initialized subsystem
+        Self {
+            state: CompleteButtonState {
+                switch1: false,
+                switch2: false,
+                switch3: false,
+                switch4: false,
+                switch5: false,
+                three_position_switch: 0,
+            },
+            buttons_channel,
+            shared_i2c_bus,
+            interrupt_pin_1,
+            interrupt_pin_2,
+        }
+    }
 
     pub fn on_gpio_interrupt_1() {
         let _ = BUTTON_IRQ_CH.try_send(ButtonIrq::Edge);
@@ -58,30 +94,42 @@ impl ButtonSubsystem {
         let _ = BUTTON_IRQ_CH.try_send(ButtonIrq::Edge);
     }
 
-    async fn interrupt_handler(&mut self) {
+    async fn read_gpio_expander_raw(&mut self) -> (u8, u8) {
+        // Lock the I2C bus to read the state of the buttons from the I2C expander
+        let mut i2c_bus = self.shared_i2c_bus.lock().await;
+
+        let gpio_a_register = 0x12;
+        let gpio_b_register = 0x13;
+
+        // Read GPIO A and GPIO B registers from the I2C expander
+        let mut gpio_a_buffer = [0];
+        let _ = i2c_bus.write_read(
+            Self::EXPANDER_I2C_ADDRESS,
+            &[gpio_a_register],
+            &mut gpio_a_buffer,
+            10,
+        );
+
+        let mut gpio_b_buffer = [0];
+        let _ = i2c_bus.write_read(
+            Self::EXPANDER_I2C_ADDRESS,
+            &[gpio_b_register],
+            &mut gpio_b_buffer,
+            10,
+        );
+
+        // Doesn't hurt to explicitly drop the lock guard here
+        drop(i2c_bus);
+
+        (gpio_a_buffer[0], gpio_b_buffer[0])
+    }
+
+    pub async fn interrupt_handler(&mut self) {
         loop {
             let _ = BUTTON_IRQ_CH.receive().await;
 
-            // Lock the I2C bus to read the state of the buttons from the I2C expander
-            let mut i2c_bus = self.shared_i2c_bus.lock().await;
+            let (gpio_a, gpio_b) = self.read_gpio_expander_raw().await;
 
-            let expander_address = 0x20;
-            let gpio_a_register = 0x12;
-            let gpio_b_register = 0x13;
-
-            // Read GPIO A and GPIO B registers from the I2C expander
-            let mut gpio_a_buffer = [0];
-            let _ =
-                i2c_bus.write_read(expander_address, &[gpio_a_register], &mut gpio_a_buffer, 10);
-
-            let mut gpio_b_buffer = [0];
-            let _ =
-                i2c_bus.write_read(expander_address, &[gpio_b_register], &mut gpio_b_buffer, 10);
-
-            let new_state = Self::calculate_new_state(gpio_a_buffer[0], gpio_b_buffer[0]);
-
-            // Unlock ASAP after reading from the I2C expander to minimize the time spent holding the lock
-            drop(i2c_bus);
             // Reset interrupt ASAP to minimize the time spent handling the interrupt
             self.interrupt_pin_1
                 .enable_interrupt()
@@ -91,6 +139,7 @@ impl ButtonSubsystem {
                 .expect("Failed to re-enable GPIO interrupt 2");
 
             // Calculate button changes and send them to the core subsystem
+            let new_state = Self::calculate_new_state(gpio_a, gpio_b);
             let button_changes = Self::calculate_button_changes(&self.state, &new_state);
 
             for change in button_changes.iter().flatten() {
