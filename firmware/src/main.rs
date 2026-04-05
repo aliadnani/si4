@@ -2,6 +2,7 @@ mod services;
 mod subsystems;
 
 use crate::subsystems::buttons::{ButtonChange, ButtonSubsystem};
+use embassy_futures::join::join;
 use embassy_sync::{channel::Channel, mutex::Mutex};
 use esp_idf_svc::hal::{
     gpio::{PinDriver, Pull},
@@ -39,8 +40,8 @@ fn main() {
         .expect("Failed to configure GPIO interrupt pin 2");
     let i2c_bus = I2cDriver::new(
         peripherals.i2c0,
-        peripherals.pins.gpio9,
         peripherals.pins.gpio8,
+        peripherals.pins.gpio9,
         &i2c::config::Config::default().baudrate(Hertz(100_000)),
     )
     .expect("Failed to initialize I2C bus");
@@ -49,46 +50,23 @@ fn main() {
         I2C_BUS.init(shared_i2c_bus);
 
     let button_subsystem_future = ButtonSubsystem::new(
-        &button_channel,
-        &shared_i2c_bus,
+        button_channel,
+        shared_i2c_bus,
         gpio_interrupt_pin_1,
         gpio_interrupt_pin_2,
     );
 
     // 2.1 Initialize core subsystem
-    let core = core::Core::new(&button_channel);
+    let core = core::Core::new(button_channel);
 
     block_on(async {
         let mut button_subsystem = button_subsystem_future.await;
 
-        // Register GPIO interrupts
-        unsafe {
-            button_subsystem
-                .interrupt_pin_1
-                .subscribe(|| ButtonSubsystem::on_gpio_interrupt_1())
-                .expect("Failed to subscribe to GPIO interrupts");
-            button_subsystem
-                .interrupt_pin_2
-                .subscribe(|| ButtonSubsystem::on_gpio_interrupt_2())
-                .expect("Failed to subscribe to GPIO interrupts");
-        }
-
         log::info!("Si4 booted!");
 
-        let _button_interrupt_handler = std::thread::spawn(move || {
-            block_on(button_subsystem.interrupt_handler());
-        });
+        join(button_subsystem.interrupt_handler(), core.on_button_press()).await;
 
-        let _core_task = std::thread::spawn(move || {
-            block_on(core.on_button_press());
-        });
-
-        _button_interrupt_handler.join().expect("Button interrupt handler panicked");
-        _core_task.join().expect("Core task panicked");
-
-
-
-        log::error!("Main thread exiting, which should never happen!");
+        log::error!("Task join returned unexpectedly");
     })
 
     // 1.2 Initialize button subsystem tasks

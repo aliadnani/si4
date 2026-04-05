@@ -13,7 +13,8 @@ impl Core {
     }
 
     pub async fn on_button_press(&self) {
-        while let Ok(button_change) = self.buttons_channel.try_receive() {
+        loop {
+            let button_change = self.buttons_channel.receive().await;
             match button_change {
                 ButtonChange::Pressed { button_id } => {
                     log::info!("Button {:?} pressed", button_id);
